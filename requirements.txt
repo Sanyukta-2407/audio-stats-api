@@ -2,7 +2,6 @@ fastapi
 uvicorn
 pandas
 numpy
-openai-whisper
+openai
 python-dotenv
 python-multipart
-torch

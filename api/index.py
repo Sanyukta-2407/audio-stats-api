@@ -5,12 +5,18 @@ import traceback
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-import whisper
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
 
 app = FastAPI()
 
-# Load Whisper model once when the server starts
-model = whisper.load_model("tiny")
+# For AIPipe/OpenAI-compatible endpoint
+client = OpenAI(
+    api_key=os.getenv("AIPIPE_TOKEN"),
+    base_url="https://aipipe.org/openrouter/v1"
+)
 
 
 class AudioRequest(BaseModel):
@@ -20,9 +26,7 @@ class AudioRequest(BaseModel):
 
 @app.get("/")
 def home():
-    return {
-        "message": "Audio Stats API is running"
-    }
+    return {"message": "Audio Stats API is running"}
 
 
 @app.post("/")
@@ -30,20 +34,21 @@ def process_audio(request: AudioRequest):
     temp_file = None
 
     try:
-        # Decode base64 audio
         audio_bytes = base64.b64decode(request.audio_base64)
 
-        # Save to a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
             f.write(audio_bytes)
             temp_file = f.name
 
-        # Transcribe using Whisper
-        result = model.transcribe(temp_file)
+        with open(temp_file, "rb") as audio_file:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file
+            )
 
         return {
             "audio_id": request.audio_id,
-            "transcription": result["text"].strip()
+            "transcription": transcript.text
         }
 
     except Exception as e:
