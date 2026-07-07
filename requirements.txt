@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pandas
+numpy
+openai-whisper
+python-dotenv
+python-multipart
+torch
